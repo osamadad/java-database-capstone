@@ -1,6 +1,92 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Patient;
+import com.project.back_end.services.PatientService;
+import com.project.back_end.services.Service;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/patient")
+@RequiredArgsConstructor
 public class PatientController {
+
+    private final PatientService patientService;
+    private final Service service;
+
+    @GetMapping("/{token}")
+    public ResponseEntity<?> getPatient(
+            @PathVariable String token) {
+
+        ResponseEntity<?> tokenResponse =
+                service.validateToken(token, "patient");
+
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return tokenResponse;
+        }
+
+        return patientService.getPatientDetails(token);
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> createPatient(
+            @Valid @RequestBody Patient patient) {
+
+        int result = patientService.createPatient(patient);
+
+        if (result == 1) {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Patient created successfully");
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to create patient");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(
+            @Valid @RequestBody Patient patient) {
+
+        return service.validatePatientLogin(patient);
+    }
+
+    @GetMapping("/{id}/appointments/{token}/{user}")
+    public ResponseEntity<?> getPatientAppointment(
+            @PathVariable Long id,
+            @PathVariable String token,
+            @PathVariable String user) {
+
+        ResponseEntity<?> tokenResponse =
+                service.validateToken(token, user);
+
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return tokenResponse;
+        }
+
+        return patientService.getPatientAppointment(id);
+    }
+
+    @GetMapping("/appointments")
+    public ResponseEntity<?> filterPatientAppointment(
+            @RequestParam String condition,
+            @RequestParam(required = false) String name,
+            @RequestParam String token) {
+
+        ResponseEntity<?> tokenResponse =
+                service.validateToken(token, "patient");
+
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return tokenResponse;
+        }
+
+        // Filtering implementation depends on how the patient's ID
+        // is obtained from your existing Service methods.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body("Filtering endpoint implementation depends on patient ID retrieval");
+    }
 
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller for patient-related operations.

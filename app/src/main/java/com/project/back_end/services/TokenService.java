@@ -1,9 +1,79 @@
 package com.project.back_end.services;
 
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
+
+@Component
+@RequiredArgsConstructor
 public class TokenService {
-// 1. **@Component Annotation**
-// The @Component annotation marks this class as a Spring component, meaning Spring will manage it as a bean within its application context.
-// This allows the class to be injected into other Spring-managed components (like services or controllers) where it's needed.
+
+    private final AdminRepository adminRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String generateToken(String email) {
+        Date issuedAt = new Date();
+        Date expiration = new Date(issuedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(issuedAt)
+                .expiration(expiration)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String extractEmail(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    public boolean validateToken(String token, String role) {
+        try {
+            String email = extractEmail(token);
+
+            switch (role.toLowerCase()) {
+                case "admin":
+                    return adminRepository.findAdminByUsername(email)==null;
+
+                case "doctor":
+                    return doctorRepository.findDoctorByEmail(email)==null;
+
+                case "patient":
+                    return patientRepository.findPatientByEmail(email)==null;
+
+                default:
+                    return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
 // 2. **Constructor Injection for Dependencies**
 // The constructor injects dependencies for `AdminRepository`, `DoctorRepository`, and `PatientRepository`,

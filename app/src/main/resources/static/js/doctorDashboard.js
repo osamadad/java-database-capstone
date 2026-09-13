@@ -52,3 +52,208 @@
     - Call renderContent() (assumes it sets up the UI layout)
     - Call loadAppointments() to display today's appointments by default
 */
+import { getAllAppointments } from "./services/appointmentRecordService.js";
+import { createPatientRow } from "./components/patientRows.js";
+
+
+const tableBody =
+    document.getElementById("patientTableBody");
+
+
+let selectedDate =
+    new Date().toISOString().split("T")[0];
+
+
+const token =
+    localStorage.getItem("token");
+
+
+let patientName = null;
+
+
+/*
+ * Load appointments
+ */
+async function loadAppointments() {
+
+    if (!tableBody) {
+        return;
+    }
+
+
+    try {
+
+        const appointments = await getAllAppointments(
+            selectedDate,
+            patientName,
+            token
+        );
+
+
+        // Clear existing rows
+        tableBody.innerHTML = "";
+
+
+        // No appointments
+        if (!appointments || appointments.length === 0) {
+
+            const row = document.createElement("tr");
+
+            const cell = document.createElement("td");
+
+            cell.colSpan = 5;
+
+            cell.textContent =
+                "No Appointments found for today";
+
+            row.appendChild(cell);
+
+            tableBody.appendChild(row);
+
+            return;
+        }
+
+
+        // Render appointment rows
+        appointments.forEach((appointment) => {
+
+            const patient =
+                appointment.patient || appointment;
+
+            const row =
+                createPatientRow(
+                    patient,
+                    appointment
+                );
+
+            tableBody.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Error loading appointments:",
+            error
+        );
+
+
+        tableBody.innerHTML = "";
+
+        const row = document.createElement("tr");
+
+        const cell = document.createElement("td");
+
+        cell.colSpan = 5;
+
+        cell.textContent =
+            "Unable to load appointments.";
+
+        row.appendChild(cell);
+
+        tableBody.appendChild(row);
+    }
+}
+
+
+/*
+ * Search patients by name
+ */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const searchBar =
+        document.getElementById("searchBar");
+
+
+    if (searchBar) {
+
+        searchBar.addEventListener("input", () => {
+
+            patientName =
+                searchBar.value.trim();
+
+
+            if (!patientName) {
+                patientName = null;
+            }
+
+
+            loadAppointments();
+
+        });
+    }
+});
+
+
+/*
+ * Today's appointments button
+ */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const todayButton =
+        document.getElementById("todayButton");
+
+
+    if (todayButton) {
+
+        todayButton.addEventListener("click", () => {
+
+            selectedDate =
+                new Date()
+                    .toISOString()
+                    .split("T")[0];
+
+
+            const datePicker =
+                document.getElementById("datePicker");
+
+
+            if (datePicker) {
+                datePicker.value = selectedDate;
+            }
+
+
+            loadAppointments();
+
+        });
+    }
+});
+
+
+/*
+ * Date picker
+ */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const datePicker =
+        document.getElementById("datePicker");
+
+
+    if (datePicker) {
+
+        datePicker.value = selectedDate;
+
+
+        datePicker.addEventListener("change", () => {
+
+            selectedDate =
+                datePicker.value;
+
+            loadAppointments();
+
+        });
+    }
+});
+
+
+/*
+ * Initial page load
+ */
+document.addEventListener("DOMContentLoaded", () => {
+
+    if (typeof renderContent === "function") {
+        renderContent();
+    }
+
+    loadAppointments();
+});

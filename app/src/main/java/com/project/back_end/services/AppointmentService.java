@@ -1,15 +1,142 @@
 package com.project.back_end.services;
 
-public class AppointmentService {
-// 1. **Add @Service Annotation**:
-//    - To indicate that this class is a service layer class for handling business logic.
-//    - The `@Service` annotation should be added before the class declaration to mark it as a Spring service component.
-//    - Instruction: Add `@Service` above the class definition.
+import com.project.back_end.models.Appointment;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
-// 2. **Constructor Injection for Dependencies**:
-//    - The `AppointmentService` class requires several dependencies like `AppointmentRepository`, `Service`, `TokenService`, `PatientRepository`, and `DoctorRepository`.
-//    - These dependencies should be injected through the constructor.
-//    - Instruction: Ensure constructor injection is used for proper dependency management in Spring.
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+@AllArgsConstructor
+public class AppointmentService {
+
+    private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final TokenService tokenService;
+    private final com.project.back_end.services.Service service;
+
+    @Transactional
+    public int bookAppointment(Appointment appointment){
+        try {
+            appointmentRepository.save(appointment);
+            return 1;
+        }catch (Exception e){
+            return 0;
+        }
+    }
+
+
+    @Transactional
+    public String updateAppointment(Long appointmentId, Long patientId,
+                                    LocalDateTime newAppointmentTime) {
+        try {
+            Optional<Appointment> optionalAppointment =
+                    appointmentRepository.findById(appointmentId);
+
+            if (optionalAppointment.isEmpty()) {
+                return "Appointment not found";
+            }
+
+            Appointment appointment = optionalAppointment.get();
+
+            if (!appointment.getPatient().getId().equals(patientId)) {
+                return "Patient does not own this appointment";
+            }
+
+            // Validate that the new appointment time is available
+            int validation =
+                    service.validateAppointment(
+                            appointment.getDoctor().getId(),
+                            newAppointmentTime
+                    );
+
+            if (validation != 1) {
+                return "Doctor is not available at this time";
+            }
+
+            appointment.setAppointmentTime(newAppointmentTime);
+            appointmentRepository.save(appointment);
+
+            return "Appointment updated successfully";
+
+        } catch (Exception e) {
+            return "Failed to update appointment";
+        }
+    }
+
+    @Transactional
+    public String cancelAppointment(Long appointmentId, Long patientId) {
+        try {
+            Optional<Appointment> optionalAppointment =
+                    appointmentRepository.findById(appointmentId);
+
+            if (optionalAppointment.isEmpty()) {
+                return "Appointment not found";
+            }
+
+            Appointment appointment = optionalAppointment.get();
+
+            if (!appointment.getPatient().getId().equals(patientId)) {
+                return "Patient does not own this appointment";
+            }
+
+            appointmentRepository.delete(appointment);
+
+            return "Appointment cancelled successfully";
+
+        } catch (Exception e) {
+            return "Failed to cancel appointment";
+        }
+    }
+
+    @Transactional
+    public List<Appointment> getAppointments(
+            Long doctorId,
+            LocalDate date,
+            String patientName) {
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        if (patientName == null || patientName.isBlank()) {
+            return appointmentRepository
+                    .getAppointmentByDoctorIdAndAppointmentTimeBetween(
+                            doctorId,
+                            startOfDay,
+                            endOfDay
+                    );
+        }
+
+        // Use your existing repository query for filtering by patient name.
+        return appointmentRepository
+                .getAppointmentsByDoctorIdAndPatientNameContainingIgnoreCaseAndAppointmentTimeBetween(
+                        doctorId,
+                        patientName,
+                        startOfDay,
+                        endOfDay
+                );
+    }
+
+    @Transactional
+    public int changeStatus(Long appointmentId, int status) {
+        try {
+            appointmentRepository.updateStatus(status,appointmentId);
+            return 1;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
 
 // 3. **Add @Transactional Annotation for Methods that Modify Database**:
 //    - The methods that modify or update the database should be annotated with `@Transactional` to ensure atomicity and consistency of the operations.

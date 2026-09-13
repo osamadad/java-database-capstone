@@ -1,17 +1,291 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
 public class DoctorService {
 
-// 1. **Add @Service Annotation**:
-//    - This class should be annotated with `@Service` to indicate that it is a service layer class.
-//    - The `@Service` annotation marks this class as a Spring-managed bean for business logic.
-//    - Instruction: Add `@Service` above the class declaration.
+    private final DoctorRepository doctorRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final TokenService tokenService;
 
-// 2. **Constructor Injection for Dependencies**:
-//    - The `DoctorService` class depends on `DoctorRepository`, `AppointmentRepository`, and `TokenService`.
-//    - These dependencies should be injected via the constructor for proper dependency management.
-//    - Instruction: Ensure constructor injection is used for injecting dependencies into the service.
+    @Transactional
+    public List<LocalTime> getDoctorAvailability(
+            Long doctorId,
+            LocalDate date) {
 
+        Optional<Doctor> optionalDoctor =
+                doctorRepository.findById(doctorId);
+
+        if (optionalDoctor.isEmpty()) {
+            return List.of();
+        }
+
+        Doctor doctor = optionalDoctor.get();
+
+        List<LocalTime> availableTimes = doctor.getAvailableTimes()
+                .stream()
+                .map(LocalTime::parse)
+                .toList();
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        List<Appointment> appointments =
+                appointmentRepository
+                        .getAppointmentByDoctorIdAndAppointmentTimeBetween(
+                                doctorId,
+                                startOfDay,
+                                endOfDay
+                        );
+
+        List<LocalTime> bookedTimes = appointments.stream()
+                .map(Appointment::getAppointmentTimeOnly)
+                .toList();
+
+        return availableTimes.stream()
+                .filter(time -> !bookedTimes.contains(time))
+                .collect(Collectors.toList());
+    }
+
+    // 5. saveDoctor
+    @Transactional
+    public int saveDoctor(Doctor doctor) {
+        try {
+            Doctor existingDoctor =
+                    doctorRepository.findDoctorByEmail(doctor.getEmail());
+
+            if (existingDoctor==null) {
+                return -1;
+            }
+
+            doctorRepository.save(doctor);
+            return 1;
+
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 6. updateDoctor
+    @Transactional
+    public int updateDoctor(Long id, Doctor doctor) {
+        try {
+            Optional<Doctor> existingDoctor =
+                    doctorRepository.findById(id);
+
+            if (existingDoctor.isEmpty()) {
+                return -1;
+            }
+
+            Doctor existing = existingDoctor.get();
+
+            existing.setName(doctor.getName());
+            existing.setSpecialty(doctor.getSpecialty());
+            existing.setEmail(doctor.getEmail());
+            existing.setPassword(doctor.getPassword());
+            existing.setPhone(doctor.getPhone());
+            existing.setAvailableTimes(doctor.getAvailableTimes());
+
+            doctorRepository.save(existing);
+
+            return 1;
+
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 7. getDoctors
+    @Transactional
+    public List<Doctor> getDoctors() {
+        return doctorRepository.findAll();
+    }
+
+    // 8. deleteDoctor
+    @Transactional
+    public int deleteDoctor(Long doctorId) {
+        try {
+            Optional<Doctor> optionalDoctor =
+                    doctorRepository.findById(doctorId);
+
+            if (optionalDoctor.isEmpty()) {
+                return -1;
+            }
+
+            Doctor doctor = optionalDoctor.get();
+
+            List<Appointment> appointments =
+                    appointmentRepository
+                            .getAppointmentByDoctorIdAndAppointmentTimeBetween(
+                                    doctorId,
+                                    LocalDateTime.MIN,
+                                    LocalDateTime.MAX
+                            );
+
+            appointmentRepository.deleteAll(appointments);
+            doctorRepository.delete(doctor);
+
+            return 1;
+
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // 9. validateDoctor
+    public ResponseEntity<?> validateDoctor(Doctor doctor) {
+        try {
+            Doctor existingDoctor =
+                    doctorRepository.findDoctorByEmail(doctor.getEmail());
+
+            if (existingDoctor==null) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body("Invalid email or password");
+            }
+
+            if (!existingDoctor.getPassword().equals(doctor.getPassword())) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body("Invalid email or password");
+            }
+
+            String token =
+                    tokenService.generateToken(existingDoctor.getEmail());
+
+            return ResponseEntity.ok(token);
+
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred");
+        }
+    }
+
+    // 10. findDoctorByName
+    @Transactional
+    public List<Doctor> findDoctorByName(String name) {
+        return doctorRepository.findDoctorByNameContainsIgnoreCase(name);
+    }
+
+    // 11. filterDoctorsByNameSpecilityandTime
+    @Transactional
+    public List<Doctor> filterDoctorsByNameSpecilityandTime(
+            String name,
+            String specialty,
+            String time) {
+
+        List<Doctor> doctors =
+                doctorRepository.findDoctorByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(
+                        name,
+                        specialty
+                );
+
+        return filterDoctorByTime(doctors, time);
+    }
+
+    // 12. filterDoctorByTime
+    @Transactional
+    public List<Doctor> filterDoctorByTime(
+            List<Doctor> doctors,
+            String time) {
+
+        if (time == null || time.isBlank()) {
+            return doctors;
+        }
+
+        String period = time.toUpperCase();
+
+        return doctors.stream()
+                .filter(doctor -> doctor.getAvailableTimes()
+                        .stream()
+                        .anyMatch(availableTime ->
+                                isTimeInPeriod(LocalTime.parse(availableTime), period)))
+                .collect(Collectors.toList());
+    }
+
+    // 13. filterDoctorByNameAndTime
+    @Transactional
+    public List<Doctor> filterDoctorByNameAndTime(
+            String name,
+            String time) {
+
+        List<Doctor> doctors =
+                doctorRepository.findDoctorByNameContainsIgnoreCase(name);
+
+        return filterDoctorByTime(doctors, time);
+    }
+
+    // 14. filterDoctorByNameAndSpecility
+    @Transactional
+    public List<Doctor> filterDoctorByNameAndSpecility(
+            String name,
+            String specialty) {
+
+        return doctorRepository
+                .findDoctorByNameContainingIgnoreCaseAndSpecialtyIgnoreCase(
+                        name,
+                        specialty
+                );
+    }
+
+    @Transactional
+    public List<Doctor> filterDoctorByTimeAndSpecility(
+            String time,
+            String specialty) {
+
+        List<Doctor> doctors =
+                doctorRepository.findDoctorBySpecialtyIgnoreCase(specialty);
+
+        return filterDoctorByTime(doctors, time);
+    }
+
+    @Transactional
+    public List<Doctor> filterDoctorBySpecility(String specialty) {
+        return doctorRepository
+                .findDoctorBySpecialtyIgnoreCase(specialty);
+    }
+
+    @Transactional
+    public List<Doctor> filterDoctorsByTime(String time) {
+
+        List<Doctor> doctors =
+                doctorRepository.findAll();
+
+        return filterDoctorByTime(doctors, time);
+    }
+
+    private boolean isTimeInPeriod(
+            LocalTime time,
+            String period) {
+
+        if ("AM".equals(period)) {
+            return time.isBefore(LocalTime.NOON);
+        }
+
+        if ("PM".equals(period)) {
+            return !time.isBefore(LocalTime.NOON);
+        }
+
+        return false;
+    }
 // 3. **Add @Transactional Annotation for Methods that Modify or Fetch Database Data**:
 //    - Methods like `getDoctorAvailability`, `getDoctors`, `findDoctorByName`, `filterDoctorsBy*` should be annotated with `@Transactional`.
 //    - The `@Transactional` annotation ensures that database operations are consistent and wrapped in a single transaction.

@@ -1,14 +1,170 @@
 package com.project.back_end.services;
 
+import com.project.back_end.models.Admin;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Doctor;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AdminRepository;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+
+@org.springframework.stereotype.Service
+@RequiredArgsConstructor
 public class Service {
-// 1. **@Service Annotation**
-// The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning
-// and manage its lifecycle, enabling it to be injected into controllers or other services using @Autowired or constructor injection.
 
-// 2. **Constructor Injection for Dependencies**
-// The constructor injects all required dependencies (TokenService, Repositories, and other Services). This approach promotes loose coupling, improves testability,
-// and ensures that all required dependencies are provided at object creation time.
+    private final TokenService tokenService;
+    private final AdminRepository adminRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorService doctorService;
+    private final PatientService patientService;
 
+    public ResponseEntity<?> validateToken(String token, String role) {
+        try {
+            if (tokenService.validateToken(token, role)) {
+                return ResponseEntity.ok().build();
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired token");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired token");
+        }
+    }
+
+    public ResponseEntity<?> validateAdmin(Admin admin) {
+        try {
+            Admin existingAdmin =
+                    adminRepository.findAdminByUsername(admin.getUsername());
+
+            if (existingAdmin!=null) {
+                if (existingAdmin.getPassword().equals(admin.getPassword())) {
+                    String token = tokenService.generateToken(existingAdmin.getUsername());
+                    return ResponseEntity.ok(token);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid username or password");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred");
+        }
+    }
+
+    public List<Doctor> filterDoctor(String name, String specialty, String time) {
+
+        if (name == null && specialty == null && time == null) {
+            return doctorRepository.findAll();
+        }
+
+        if (name != null && specialty != null && time != null) {
+            return doctorRepository.findDoctorBySpecialtyIgnoreCase(specialty);
+        }
+
+        return doctorRepository.findAll();
+
+        // Handle the other filter combinations...
+    }
+
+    public int validateAppointment(Long doctorId, LocalDateTime requestedTime) {
+
+        Optional<Doctor> doctor = doctorRepository.findById(doctorId);
+
+        if (doctor.isEmpty()) {
+            return -1;
+        }
+
+        LocalDateTime requestedEnd = requestedTime.plusHours(1);
+
+        List<Appointment> appointments =
+                appointmentRepository
+                        .getAppointmentByDoctorIdAndAppointmentTimeBetween(
+                                doctorId,
+                                requestedTime,
+                                requestedEnd
+                        );
+
+        if (!appointments.isEmpty()) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    public boolean validatePatient(Patient patient) {
+
+        Patient existingPatient =
+                patientRepository.findPatientByEmailOrPhone(
+                        patient.getEmail(),
+                        patient.getPhone()
+                );
+
+        return existingPatient==null;
+    }
+
+    public ResponseEntity<?> validatePatientLogin(Patient patient) {
+        try {
+            Patient existingPatient =
+                    patientRepository.findPatientByEmail(patient.getEmail());
+
+            if (existingPatient!=null) {
+                Patient foundPatient = existingPatient;
+
+                if (existingPatient.getPassword().equals(patient.getPassword())) {
+                    String token =
+                            tokenService.generateToken(existingPatient.getEmail());
+
+                    return ResponseEntity.ok(token);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid email or password");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred");
+        }
+    }
+
+//    public List<Appointment> filterPatient(
+//            String token,
+//            String condition,
+//            String doctorName) {
+//
+//        String email = tokenService.extractEmail(token);
+//
+//        if (condition != null && doctorName != null) {
+//            return patientService
+//                    .filterAppointments(email, condition, doctorName);
+//        }
+//
+//        if (condition != null) {
+//            return patientService
+//                    .filterAppointmentsByCondition(email, condition);
+//        }
+//
+//        if (doctorName != null) {
+//            return patientService
+//                    .filterAppointmentsByDoctorName(email, doctorName);
+//        }
+//
+//        return patientService.get(email);
+//    }
 // 3. **validateToken Method**
 // This method checks if the provided JWT token is valid for a specific user. It uses the TokenService to perform the validation.
 // If the token is invalid or expired, it returns a 401 Unauthorized response with an appropriate error message. This ensures security by preventing

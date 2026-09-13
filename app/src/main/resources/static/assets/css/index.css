@@ -1,5 +1,398 @@
 /* this is the style sheet file for index.htlm  */
 
+css
+    /* =========================
+       Global Styles
+       ========================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    min-height: 100vh;
+}
+
+
+/* =========================
+   Main Wrapper
+   ========================= */
+
+.wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* =========================
+   Main Content
+   ========================= */
+
+.main-content {
+    flex: 1;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    padding: 40px 20px;
+
+    background-image: url("../images/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+
+/* =========================
+   Heading
+   ========================= */
+
+.main-content h2 {
+    margin-bottom: 30px;
+
+    font-size: 36px;
+    font-weight: 700;
+    color: #333;
+    font-family: 'Roboto', sans-serif;
+
+    text-align: center;
+}
+
+
+/* =========================
+   Role Buttons
+   ========================= */
+
+.main-content button {
+    width: 250px;
+    padding: 14px 20px;
+    margin: 8px;
+
+    border: none;
+    border-radius: 8px;
+
+    background-color: #007bff;
+    color: white;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+            background-color 0.2s ease,
+            transform 0.2s ease;
+}
+
+.main-content button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.main-content button:active {
+    transform: translateY(0);
+}
+
+.main-content button:focus {
+    outline: 3px solid rgba(0, 123, 255, 0.3);
+    outline-offset: 2px;
+}
+
+
+/* =========================
+   Modal
+   ========================= */
+
+.modal {
+    display: none;
+
+    position: fixed;
+    z-index: 1000;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    width: 90%;
+    max-width: 500px;
+
+    padding: 30px;
+
+    background-color: white;
+    border-radius: 10px;
+
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal.active {
+    display: block;
+}
+
+#modal-body {
+    padding: 20px 0;
+}
+
+
+/* =========================
+   Modal Close Button
+   ========================= */
+
+.close {
+    position: absolute;
+
+    top: 10px;
+    right: 15px;
+
+    border: none;
+    background: none;
+
+    font-size: 28px;
+    color: #555;
+
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+
+/* =========================
+   Header
+   ========================= */
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 15px 30px;
+
+    background-color: #fff;
+
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.header .logo {
+    display: flex;
+    align-items: center;
+}
+
+.header .logo img {
+    max-width: 150px;
+    height: auto;
+}
+
+.header nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header nav a {
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+
+    transition: color 0.2s ease;
+}
+
+.header nav a:hover {
+    color: #007bff;
+}
+
+
+/* =========================
+   Footer
+   ========================= */
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 20px 30px;
+
+    background-color: #222;
+    color: white;
+}
+
+.footer-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.footer a {
+    color: white;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================
+   Dashboard Button
+   ========================= */
+
+.dashboard-btn {
+    padding: 10px 20px;
+
+    border: none;
+    border-radius: 6px;
+
+    background-color: #007bff;
+    color: white;
+
+    cursor: pointer;
+
+    transition: background-color 0.2s ease;
+}
+
+.dashboard-btn:hover {
+    background-color: #0056b3;
+}
+
+
+/* =========================
+   Input Fields
+   ========================= */
+
+.input-field {
+    width: 100%;
+
+    padding: 12px 15px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-size: 16px;
+
+    transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+}
+
+.input-field:hover {
+    border-color: #999;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #007bff;
+
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+
+/* =========================
+   Select Dropdown
+   ========================= */
+
+.select-dropdown {
+    width: 100%;
+
+    padding: 12px 15px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: white;
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+.select-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+
+/* =========================
+   Checkbox Group
+   ========================= */
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    margin: 15px 0;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   Responsive Design
+   ========================= */
+
+@media (max-width: 768px) {
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+
+        padding: 15px;
+    }
+
+    .header nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .footer {
+        flex-direction: column;
+        gap: 15px;
+
+        text-align: center;
+    }
+
+    .main-content h2 {
+        font-size: 28px;
+    }
+
+    .main-content button {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+
 /* 
 **Global Reset (`*`)**
 

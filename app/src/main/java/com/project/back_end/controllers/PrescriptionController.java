@@ -1,7 +1,73 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.models.Prescription;
+import com.project.back_end.services.AppointmentService;
+import com.project.back_end.services.PrescriptionService;
+import com.project.back_end.services.Service;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("${api.path}prescription")
+@RequiredArgsConstructor
 public class PrescriptionController {
-    
+
+    private final PrescriptionService prescriptionService;
+    private final Service service;
+    private final AppointmentService appointmentService;
+
+
+    @PostMapping("/{token}")
+    public ResponseEntity<?> savePrescription(
+            @Valid @RequestBody Prescription prescription,
+            @PathVariable String token) {
+
+        ResponseEntity<?> tokenResponse =
+                service.validateToken(token, "doctor");
+
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return tokenResponse;
+        }
+
+        if (prescription.getAppointmentId() == null) {
+            return ResponseEntity.badRequest()
+                    .body("Appointment is required");
+        }
+
+        Long appointmentId = prescription.getAppointmentId();
+
+        int statusResult = appointmentService.changeStatus(appointmentId, 1);
+
+        if (statusResult == -1) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Appointment not found");
+        }
+
+        if (statusResult == 0) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update appointment status");
+        }
+
+        return prescriptionService.savePrescription(prescription);
+    }
+
+    @GetMapping("/{appointmentId}/{token}")
+    public ResponseEntity<?> getPrescription(
+            @PathVariable Long appointmentId,
+            @PathVariable String token) {
+
+        ResponseEntity<?> tokenResponse =
+                service.validateToken(token, "doctor");
+
+        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+            return tokenResponse;
+        }
+
+        return prescriptionService.getPrescription(appointmentId);
+    }
 // 1. Set Up the Controller Class:
 //    - Annotate the class with `@RestController` to define it as a REST API controller.
 //    - Use `@RequestMapping("${api.path}prescription")` to set the base path for all prescription-related endpoints.
