@@ -132,22 +132,6 @@ function renderHeader() {
     }
 
     const role = localStorage.getItem("userRole");
-    const token = localStorage.getItem("token");
-
-    // Handle invalid or expired session
-    if (
-        (role === "loggedPatient" ||
-            role === "admin" ||
-            role === "doctor") &&
-        !token
-    ) {
-        localStorage.removeItem("userRole");
-
-        alert("Session expired or invalid login. Please log in again.");
-
-        window.location.href = "/";
-        return;
-    }
 
     const headerDiv = document.getElementById("header");
 
@@ -163,6 +147,8 @@ function renderHeader() {
             <div class="header-logo">
                 <a href="/">
                     <img
+                    height="40"
+                    width="40"
                         src="/assets/images/logo/logo.png"
                         alt="Logo"
                     >
@@ -202,14 +188,14 @@ function renderHeader() {
     } else if (role === "patient") {
 
         headerContent += `
-            <a href="/" id="loginBtn">
-                Login
-            </a>
+        <button id="patientLogin" class="adminBtn">
+            Login
+        </button>
 
-            <a href="/" id="signupBtn">
-                Sign Up
-            </a>
-        `;
+        <button id="patientSignup" class="adminBtn">
+            Sign Up
+        </button>
+    `;
 
     } else if (role === "loggedPatient") {
 

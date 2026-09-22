@@ -85,90 +85,14 @@ window.onload = function () {
 
 
 async function adminLoginHandler() {
-
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-
-    const admin = {
-        username,
-        password
-    };
-
-
-    try {
-
-        const response = await fetch(ADMIN_API, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(admin)
-        });
-
-
-        if (response.ok) {
-
-            const data = await response.json();
-
-            localStorage.setItem("token", data.token);
-
-            selectRole("admin");
-
-        } else {
-
-            alert("Invalid credentials!");
-        }
-
-    } catch (error) {
-
-        console.error("Admin login error:", error);
-
-        alert("An unexpected error occurred.");
-    }
+    localStorage.setItem("userRole", "admin");
+    window.location.href = "/adminDashboard";
 }
 
 
 async function doctorLoginHandler() {
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    const doctor = {
-        email,
-        password
-    };
-
-
-    try {
-
-        const response = await fetch(DOCTOR_API, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(doctor)
-        });
-
-
-        if (response.ok) {
-
-            const data = await response.json();
-
-            localStorage.setItem("token", data.token);
-
-            selectRole("doctor");
-
-        } else {
-
-            alert("Invalid credentials!");
-        }
-
-    } catch (error) {
-
-        console.error("Doctor login error:", error);
-
-        alert("An unexpected error occurred.");
-    }
+    localStorage.setItem("userRole", "doctor");
+    window.location.href = "/doctorDashboard";
 }
 
 

@@ -68,7 +68,7 @@ const token =
     localStorage.getItem("token");
 
 
-let patientName = null;
+let patientName = "Jane Doe";
 
 
 /*

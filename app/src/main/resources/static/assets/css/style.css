@@ -162,7 +162,7 @@
   }
   
 
-  .modal {
+  .modal-overlay {
     display: none;
     position: fixed;
     z-index: 999;

@@ -96,7 +96,7 @@ async function loadDoctorCards() {
 
         contentDiv.innerHTML = "";
 
-        renderDoctorCards(doctors);
+        renderDoctorCards(doctors.doctors);
 
     } catch (error) {
 
@@ -160,7 +160,7 @@ async function filterDoctorsOnChange() {
             specialty
         );
 
-        renderDoctorCards(doctors);
+        renderDoctorCards(doctors.doctors);
 
     } catch (error) {
 

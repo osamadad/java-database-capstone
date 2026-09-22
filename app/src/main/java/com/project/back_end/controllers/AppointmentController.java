@@ -20,19 +20,19 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
     private final Service service;
 
-    @GetMapping("/{doctorId}/{date}/{patientName}/{token}")
+    @GetMapping("/{doctorId}/{date}/{patientName}")
     public ResponseEntity<?> getAppointments(
             @PathVariable Long doctorId,
             @PathVariable LocalDate date,
-            @PathVariable(required = false) String patientName,
-            @PathVariable String token) {
+            @PathVariable(required = false) String patientName
+            ) {
 
-        ResponseEntity<?> tokenResponse =
-                service.validateToken(token, "doctor");
-
-        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
-            return tokenResponse;
-        }
+//        ResponseEntity<?> tokenResponse =
+//                service.validateToken(token, "doctor");
+//
+//        if (!tokenResponse.getStatusCode().is2xxSuccessful()) {
+//            return tokenResponse;
+//        }
 
         return ResponseEntity.ok(
                 appointmentService.getAppointments(

@@ -116,6 +116,8 @@ function renderFooter() {
             <div class="footer-branding">
 
                 <img
+                height="40"
+                width="40"
                     src="/assets/images/logo/logo.png"
                     alt="Logo"
                 >

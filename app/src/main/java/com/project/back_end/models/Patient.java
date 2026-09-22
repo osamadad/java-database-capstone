@@ -25,7 +25,7 @@ public class Patient {
     @Pattern(regexp="^[0-9]{10}$")
     private String phone;
     @NotNull
-    @Size(max=25)
+    @Size(max=255)
     private String address;
     private int status; // 0 = Scheduled, 1 = Completed
 }
